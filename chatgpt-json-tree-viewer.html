@@ -7,6 +7,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ChatGPT JSON Tree Viewer v7.6.2</title>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
@@ -1177,7 +1178,7 @@ body {
 <div id="app">
   <!-- TOPBAR -->
   <div id="topbar">
-<div id="logo">
+    <div id="logo">
       <svg viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
         <circle cx="12" cy="5" r="2.5" fill="currentColor"/>
@@ -6829,6 +6830,68 @@ function closeMobMenu() {
   initMobile();
   mq.addEventListener('change', initMobile);
 })();
+
+// ============================================================
+// WEB BROWSER TAB LOGO
+// ============================================================
+
+{
+  function updateDynamicFavicon() {
+    // Target the SVG element in text wrapper for <div id="logo">
+    const logoSvg = document.querySelector('#logo svg');
+    if (!logoSvg) return;
+
+    // 1. Clone the SVG element (to avoid distorting visible page logo)
+    const clonedSvg = logoSvg.cloneNode(true);
+
+    // 2. Force injection of the required XML settings for standalone image URLs
+    clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clonedSvg.setAttribute('width', '32');
+    clonedSvg.setAttribute('height', '32');
+
+    // 3. Dynamic Color Sync: Fetch current computed styles (CSS property values) straight from document.body, where your theme is stored!
+    const computedStyle = getComputedStyle(document.body);
+    const accentColor = computedStyle.getPropertyValue('--accent-teal').trim();
+    const fallbackColor = accentColor || '#00d4aa'; // Uses theme accent. If active theme color not found, Swaps out "currentColor" with vibrant hex color (Bright teal; stands out on light AND dark tabs)
+
+    // 4. Map the active theme color onto the SVG elements (Swap out "currentColor" with active layout token colors explicitly) 
+    clonedSvg.querySelectorAll('[stroke="currentColor"]').forEach(el => el.setAttribute('stroke', fallbackColor));
+    clonedSvg.querySelectorAll('[fill="currentColor"]').forEach(el => el.setAttribute('fill', fallbackColor));
+
+    // 5. Generate safe Base64 string data (Transform XML String into clean Base64 String)
+    const svgString = clonedSvg.outerHTML;
+    const base64Data = btoa(unescape(encodeURIComponent(svgString)));
+
+    // 6. Update or inject the favicon element in <head>
+    let faviconLink = document.querySelector("link[rel='icon']");
+    if (!faviconLink) {
+      faviconLink = document.createElement('link');
+      faviconLink.rel = 'icon';
+      faviconLink.type = 'image/svg+xml';
+      document.head.appendChild(faviconLink);
+    }
+    faviconLink.href = `data:image/svg+xml;base64,${base64Data}`;
+  }
+
+  // --- AUTOMATION TRACKER ---
+  // Watches the body element for changes to theme attributes or inline styles (style/theme mutations) so you don't have to trace down your custom theme functions!
+  const themeObserver = new MutationObserver(() => {
+    updateDynamicFavicon();
+  });
+
+  // Fire immediately on initial page structure load
+  window.addEventListener('DOMContentLoaded', () => {
+    updateDynamicFavicon(); // Initialize on startup: Set initial tab icon color based on saved theme
+
+    // Automatically triggers icon updates when savedTheme or applyCustomVars runs
+    themeObserver.observe(document.body, { 
+      attributes: true, 
+      attributeFilter: ['data-theme', 'style'] 
+    });
+
+  });
+}
+
 </script>
 </body>
 </html>
